@@ -1,10 +1,33 @@
 // a function when invoked creates an express application
 const express = require("express");
 const fs = require("fs");
-
+const morgan = require("morgan");
 const app = express();
-// middleware -- it can modify the request data -- the body data is added to the request object
+
+//  1) MIDDLEWARES
+/* 
+middleware -- it can modify the request data -- the body data is added to the request object
+the use method is what we actually use to run middleware
+use helps us to ADD midlewear in our middlewear stack
+Here expres.json() return a function that gets added to the middleware stack
+and we can use it
+
+We can create our own middleware by using app.use((req,res,next)=> { // whatever we want in here // next();})
+middleware functions run everytime the server gets a request
+NEVER FORGET TO USE NEXT IN THE MIDDLEWARE
+*/
+app.use(morgan("dev"));
+// This middleware Function gives us access to the request.body
 app.use(express.json());
+// This middleware will run on every request to the server
+// cause in the use method we dont mount a specific path/URL
+// manipulate the request
+app.use((request, response, next) => {
+  // adding a property called requestTime to the request object so we can use it later
+  request.requestTime = new Date().toISOString();
+  next();
+});
+
 const PORT = 3000;
 // Converts a JSON String to Javascript Object
 const tours = JSON.parse(
@@ -16,20 +39,19 @@ const tours = JSON.parse(
     }
   )
 );
-
 const getAllTours = (request, response) => {
   response.status(200).json({
+    requestedAt: request.requestTime,
     status: "success",
     results: tours.length,
     data: tours,
   });
 };
-
 const getTour = (request, response) => {
   const id = request.params.id * 1; // because we multiply with an integer the string number will convert to number
   // we dont need to search to see if it exists
   // if the search number is higher than our total tours then we are sure that it doenst exists
-  if (id > tours.length) {
+  if (id > tours.length - 1) {
     return response.status(404).json({
       status: "fail",
       message: "invalid id",
@@ -38,6 +60,7 @@ const getTour = (request, response) => {
   // find will return an array where the condition is true
   // find returns undefined if it cant find anything
   const tour = tours.find((el) => el.id === id);
+  console.log(tour);
   response.status(200).json({
     status: "success",
     data: { tour },
@@ -107,14 +130,33 @@ app.delete("/api/v1/tours/:id", deteleTour);
 
 //we can replace the above routing with the following using --- app.route("route in here")
 
+// ---------------ROUTES------------------
+
+// We want to create a Router for each specific concept
+// Creating and Mounting Multiple Routers
+
+// creates a new router Object and returns a new middleware function that has
+// access to the request, response and next() method
+const tourRouter = express.Router();
+const usersRouter = express.Router();
+
+// for the tourRouter to be able to work like the app we need to use middleware so
+// we can add to the app the tourRouter
+// the app.use() method can mount specific path as well and we are gonna use that
+// middleware that is specific to this router
+app.use("/api/v1/tours", tourRouter);
+
+// Instead of using the app.route we want to seperate each route to each own sub App
+// So we want to have a main route like : /api/v1/tours and the set the route method
+// to whatever we want
 // prettier-ignore
-app
-  .route("/api/v1/tours")
+tourRouter
+  .route("/")
   .get(getAllTours)
   .post(createTour);
-
-app
-  .route("/api/v1/tours/:id")
+// prettier-ignore
+tourRouter
+  .route("/:id")
   .get(getTour)
   .patch(updateTour)
   .delete(deteleTour);
