@@ -1,4 +1,5 @@
 const fs = require("fs");
+const { nextTick } = require("process");
 // Getting the data from the js file in the disk
 // Converts a JSON String to Javascript Object
 const tours = JSON.parse(
@@ -11,6 +12,26 @@ const tours = JSON.parse(
   )
 );
 
+const checkId = (req, res, next, val) => {
+  if (req.params.id * 1 > tours.length) {
+    return res.status(404).json({
+      status: "fail",
+      message: "Invalid Id",
+    });
+  }
+  next();
+};
+
+const checkBody = (request, response, next) => {
+  if (!request.body.name || !request.body.price) {
+    return response.status(400).json({
+      status: "Invalid request",
+      message: "You should provide name and price to me able to continue",
+    });
+  }
+  next();
+};
+
 const getAllTours = (request, response) => {
   response.status(200).json({
     requestedAt: request.requestTime,
@@ -20,15 +41,9 @@ const getAllTours = (request, response) => {
   });
 };
 const getTour = (request, response) => {
-  const id = request.params.id * 1; // because we multiply with an integer the string number will convert to number
-  // we dont need to search to see if it exists
-  // if the search number is higher than our total tours then we are sure that it doenst exists
-  if (id > tours.length - 1) {
-    return response.status(404).json({
-      status: "fail",
-      message: "invalid id",
-    });
-  }
+  console.log(request.params);
+  // converting string to number by multiplying the string to number 1
+  const id = request.params.id * 1;
   // find will return an array where the condition is true
   // find returns undefined if it cant find anything
   const tour = tours.find((el) => el.id === id);
@@ -43,7 +58,7 @@ const createTour = (request, response) => {
   tours.push(newTour);
 
   fs.writeFile(
-    `${__dirname}/dev-data/data/tours-simple.json`,
+    `${__dirname}/../dev-data/data/tours-simple.json`,
     JSON.stringify(tours),
     (error) => {
       if (error) console.log(error);
@@ -56,26 +71,12 @@ const createTour = (request, response) => {
   );
 };
 const updateTour = (request, response) => {
-  const id = request.params.id * 1;
-  if (id > tours.length) {
-    return response.status(404).json({
-      status: "fail",
-      message: "invalid id",
-    });
-  }
   // when we update an object we send back 200
   response.status(200).json({
     data: { tour: "<Updated tour here>" },
   });
 };
 const deleteTour = (request, response) => {
-  const id = request.params.id * 1;
-  if (id > tours.length) {
-    return response.status(404).json({
-      status: "fail",
-      message: "invalid id",
-    });
-  }
   // when we delete an object we send back 204 , and the data is null so we can undestand that it got deleted
   response.status(204).json({
     status: "success",
@@ -83,4 +84,12 @@ const deleteTour = (request, response) => {
   });
 };
 
-module.exports = { getAllTours, getTour, createTour, updateTour, deleteTour };
+module.exports = {
+  checkId,
+  checkBody,
+  getAllTours,
+  getTour,
+  createTour,
+  updateTour,
+  deleteTour,
+};
