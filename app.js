@@ -1,22 +1,31 @@
-// a function when invoked creates an express application
-const express = require("express");
-const morgan = require("morgan");
-const tourRouter = require(`${__dirname}/routes/tourRoutes`);
+const express = require('express');
+const morgan = require('morgan');
+
+const tourRouter = require('./routes/tourRoutes');
+const userRouter = require('./routes/userRoutes');
 
 const app = express();
-app.use(morgan("dev"));
-// This middleware Function gives us access to the request.body
+
+// 1) MIDDLEWARES
+if (process.env.NODE_ENV === 'development') {
+  app.use(morgan('dev'));
+}
+
 app.use(express.json());
-// This middleware will run on every request to the server
-// cause in the use method we dont mount a specific path/URL
-// manipulate the request
-app.use((request, response, next) => {
-  // adding a property called requestTime to the request object so we can use it later
-  request.requestTime = new Date().toISOString();
+app.use(express.static(`${__dirname}/public`));
+
+app.use((req, res, next) => {
+  console.log('Hello from the middleware 👋');
   next();
 });
 
-// middleware that is specific to this router
-app.use("/api/v1/tours", tourRouter);
+app.use((req, res, next) => {
+  req.requestTime = new Date().toISOString();
+  next();
+});
+
+// 3) ROUTES
+app.use('/api/v1/tours', tourRouter);
+app.use('/api/v1/users', userRouter);
 
 module.exports = app;
