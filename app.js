@@ -1,7 +1,9 @@
-const { app, express } = require("./server");
+// a function when invoked creates an express application
+const express = require("express");
 const morgan = require("morgan");
 const tourRouter = require(`${__dirname}/routes/tourRoutes`);
 
+const app = express();
 app.use(morgan("dev"));
 // This middleware Function gives us access to the request.body
 app.use(express.json());
@@ -14,16 +16,7 @@ app.use((request, response, next) => {
   next();
 });
 
-/* the app.use works lie that
-we can mount a URl and in needs a callback function with specific parameters like below
-
-app.use("any base url you want or Nothing" , (request, response, next)=> {
-  // You can do anything you want in the middeware function 
-  // but we always have to call next
-
-})
-The above callback function will if the request comes with the exact same url that we bounted in the app.use() method
-*/
+// middleware that is specific to this router
 app.use("/api/v1/tours", tourRouter);
 
-// app.use("/api/v1/users");
+module.exports = app;

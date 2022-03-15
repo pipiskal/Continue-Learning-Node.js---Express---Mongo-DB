@@ -1,5 +1,5 @@
 const fs = require("fs");
-const { nextTick } = require("process");
+
 // Getting the data from the js file in the disk
 // Converts a JSON String to Javascript Object
 const tours = JSON.parse(

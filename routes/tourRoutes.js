@@ -1,4 +1,4 @@
-const { app, express } = require("./../server");
+const express = require("express");
 const {
   checkId,
   checkBody,
