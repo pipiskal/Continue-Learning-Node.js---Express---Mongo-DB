@@ -56,6 +56,7 @@ const toursSchema = new mongoose.Schema({
   createdAt: {
     type: Date,
     default: Date.now(), // in mongo immidiadle gets converted to todays date from the time stamp
+    select: false,
   },
   startDates: {
     type: [Date],

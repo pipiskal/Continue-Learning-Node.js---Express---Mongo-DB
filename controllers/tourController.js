@@ -6,7 +6,8 @@ exports.getAllTours = async (req, res) => {
   try {
     // BUILD QUERY
     // 1)Filtering
-    // create a hardcopy of the req.obj so we wont pollute the filtering options
+    // create a hardcopy of the req.obj and clear it from some parameters so
+    // we wont pollute the filtering options
     let queryObj = { ...req.query };
     const excludedFields = ["page", "sort", "limit", "fields"];
 
@@ -35,19 +36,49 @@ exports.getAllTours = async (req, res) => {
     // { difficulty: 'easy', duration: { gte: '5' } } --> queryObject
     // so what we have to do is to replace gte or lte or gt or lt with $gtw and etc
 
-    // 2) Advanced Filtering
+    // 2A) ADVANCED FILTERING
+    console.log(req.query);
     console.log(queryObj);
+
     let queryStr = JSON.stringify(queryObj);
     queryStr = queryStr.replace(/\b(gte|gt|lte|lt)\b/g, (match) => `$${match}`);
     queryObj = JSON.parse(queryStr);
-    console.log(queryObj);
 
-    const query = Tour.find(queryObj);
+    let query = Tour.find(queryObj);
 
-    // 2) EXECUTE QUERY
+    // 2B) --- SORTING BY PROPERTY
+    // if there is a sort query in the incoming requert we want to sort by that
+    if (req.query.sort) {
+      const sortBy = req.query.sort.split(",").join(" ");
+      // chaning the query
+      // sort can come like {sort : "price"} for ascending order or
+      // like that {sort : "-price"} for descending order
+      query = query.sort(sortBy);
+      // we can also add a second sort parameter to sort by a second criteria
+      // like that : sort(price ratingsAverage) we leave a space between the values
+    } else {
+      // if user doenst speciafy any sort in the url we provide a default
+      query = query.sort("-createdAt");
+    }
+
+    // 2C) --FIELD LIMMITING , We can limit the response to specific return fields
+    // Like name, duration , difficulty and price
+    if (req.query.fields) {
+      // req.query.fields will give back the string coming from the request
+      const selectedFields = req.query.fields.split(",").join(" ");
+      // query.select('name duration, ratingAverage, difficulty, price')
+      query = query.select(selectedFields);
+      // Projection cannot have a mix of inclusion and exclusion
+    } else {
+      query = query.select("-__v");
+    }
+
+    // 2D) ---- PAGINATION ---- THE USER SHOULD BE ABLE TO SELECT A SPECIFIC PAGE
+
+    // 3) EXECUTE QUERY
     const tours = await query;
 
-    // 3) SEND RESPONSE
+    // 4) SEND RESPONSE
     res.status(200).json({
       status: "success",
       requestedAt: req.requestTime,
@@ -108,8 +139,6 @@ exports.createTour = async (req, res) => {
 
 exports.updateTour = async (req, res) => {
   try {
-    console.log(req.params.id);
-    console.log(req.body);
     const tour = await Tour.findByIdAndUpdate(req.params.id, req.body, {
       new: true, // the new updated document will be returned
       runValidators: true,
