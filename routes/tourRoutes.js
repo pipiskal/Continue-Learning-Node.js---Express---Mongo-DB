@@ -3,6 +3,8 @@ const tourController = require("./../controllers/tourController");
 
 const router = express.Router();
 
+router.route("/tour-stats").get(tourController.getTourStats);
+
 // router.param('id', tourController.checkID);
 
 // we should prefill the query string with middleware to manipulate the request object

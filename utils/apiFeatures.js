@@ -9,17 +9,13 @@ class APIFeatures {
   filter() {
     let queryObj = { ...this.queryString };
     const excludedFields = ["page", "sort", "limit", "fields"];
-    // deleting the exluded fields from the main req.query
+    // deleting the exluded fields from the main req.query so it wont polute the filtering
     excludedFields.forEach((el) => {
       delete queryObj[el];
     });
-    console.log(this.queryString);
-    console.log(queryObj);
-
     let queryStr = JSON.stringify(queryObj);
     queryStr = queryStr.replace(/\b(gte|gt|lte|lt)\b/g, (match) => `$${match}`);
     queryObj = JSON.parse(queryStr);
-    console.log(queryObj);
 
     this.query = this.query.find(queryObj);
     return this;
@@ -58,6 +54,8 @@ class APIFeatures {
     const page = this.queryString.page * 1 || 1;
     const limit = this.queryString.limit * 1 || 100;
     const skip = (page - 1) * limit;
+    console.log(`page is ${page} and limit : ${limit}`);
+
     // skip () --> the amout of results should be skipped before querying data
     // limit() --> the amount of results we want from the query to send back
     // if (this.queryString.page) {
