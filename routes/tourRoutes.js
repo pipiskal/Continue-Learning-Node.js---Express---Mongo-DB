@@ -5,6 +5,11 @@ const router = express.Router();
 
 // router.param('id', tourController.checkID);
 
+// we should prefill the query string with middleware to manipulate the request object
+router
+  .route("/top-5-destinations")
+  .get(tourController.aliasTopTours, tourController.getAllTours);
+
 router
   .route("/")
   .get(tourController.getAllTours)
